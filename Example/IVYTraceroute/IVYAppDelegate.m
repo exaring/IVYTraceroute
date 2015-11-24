@@ -17,6 +17,7 @@
     [[IVYTraceroute sharedTraceroute] tracerouteToHost:@"www.baidu.com"
                                                process:^(IVYHop *routeHop, NSArray *hops) {
                                                    NSLog(@"===============> Get Hop %@", routeHop);
+                                                   return false;
                                                }
                                                handler:^(BOOL success, NSArray *hops) {
                                                    NSLog(@"===============> Done with status %d\n Hops %@", success, hops);

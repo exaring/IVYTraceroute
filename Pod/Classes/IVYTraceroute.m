@@ -131,6 +131,11 @@ static uint16_t in_cksum(const void *buffer, size_t bufferLen) {
     struct hostent *host_entry = gethostbyname(host.UTF8String);
     char *ip_addr;
 
+    if (host_entry == NULL) {
+        self.handler(NO, [NSArray array]);
+        return;
+    }
+
     ip_addr = inet_ntoa(*((struct in_addr *)host_entry->h_addr_list[0]));
     int recv_sock;
     int send_sock;
@@ -160,6 +165,7 @@ static uint16_t in_cksum(const void *buffer, size_t bufferLen) {
     socklen_t addrLen = sizeof(fromAddr);
     void *buffer = NULL;
 
+    bool done = false;
     int ttl = 1;
     NSData *packet = nil;
     const struct IPHeader *ipPtr;
@@ -167,7 +173,7 @@ static uint16_t in_cksum(const void *buffer, size_t bufferLen) {
     self.identifier = 0;
     self.nextSequenceNumber = 0;
 
-    while (ttl <= self.maxTTL) {
+    while (ttl <= self.maxTTL && !done) {
         bool icmp = false;
         IVYHop *routeHop = nil;
         memset(&fromAddr, 0, sizeof(fromAddr));
@@ -176,7 +182,7 @@ static uint16_t in_cksum(const void *buffer, size_t bufferLen) {
             self.handler(false, [self.hops copy]);
         }
 
-        for (int try = 0; try < self.maxAttempts; try++) {
+        for (int try = 0; try < self.maxAttempts && !done; try++) {
             NSTimeInterval begTime = [[NSDate date] timeIntervalSince1970];
             packet = [self packEchoPacket];
 
@@ -202,10 +208,12 @@ static uint16_t in_cksum(const void *buffer, size_t bufferLen) {
 
                     ipPtr = (const IPHeader *)[packet bytes];
                     NSTimeInterval elapsedTime = [[NSDate date] timeIntervalSince1970] - begTime;
-                    routeHop = [[IVYHop alloc] initWithHostAddress:[NSString stringWithFormat:@"%u.%u.%u.%u", ipPtr->sourceAddress[0], ipPtr->sourceAddress[1], ipPtr->sourceAddress[2], ipPtr->sourceAddress[3] ] ttl:ttl elapsedTime:elapsedTime];
+                    routeHop = [[IVYHop alloc] initWithHostAddress:[NSString stringWithFormat:@"%u.%u.%u.%u", ipPtr->sourceAddress[0], ipPtr->sourceAddress[1], ipPtr->sourceAddress[2], ipPtr->sourceAddress[3] ] ttl:ttl elapsedTime:elapsedTime hop:(int)self.hops.count];
                     if (routeHop) {
                         [self.hops addObject:routeHop];
-                        self.processHandler(routeHop, [self.hops copy]);
+                        if (self.processHandler(routeHop, [self.hops copy])) {
+                          done = true;
+                        }
                     }
 
                     icmp = true;
@@ -232,8 +240,8 @@ static uint16_t in_cksum(const void *buffer, size_t bufferLen) {
             }
         }
 
-        if (!icmp) {
-            routeHop = [[IVYHop alloc] initWithHostAddress:@"*" ttl:ttl elapsedTime:0];
+        if (!icmp && !done) {
+            routeHop = [[IVYHop alloc] initWithHostAddress:@"*" ttl:ttl elapsedTime:0 hop:(int)self.hops.count];
             if (routeHop) {
                 [self.hops addObject:routeHop];
                 self.processHandler(routeHop, [self.hops copy]);
@@ -244,7 +252,7 @@ static uint16_t in_cksum(const void *buffer, size_t bufferLen) {
     }
 
     self.running = false;
-    self.handler(YES, [self.hops copy]);
+    self.handler(self.hops.count > 0 ? YES : NO, [self.hops copy]);
 }
 
 - (NSMutableData *)packEchoPacket {

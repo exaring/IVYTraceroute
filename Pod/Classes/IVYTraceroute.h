@@ -25,7 +25,7 @@ static const int kIVYTraceRouteMaxAttempts = 2;
 static const int kIVYTraceRouteTimeout     = 20;
 
 typedef void(^IVYTracerouteHandler)(BOOL success, NSArray *hops);
-typedef void(^IVYTracerouteProcessHandler)(IVYHop *routeHop, NSArray *hops);
+typedef bool(^IVYTracerouteProcessHandler)(IVYHop *routeHop, NSArray *hops);
 
 @interface IVYTraceroute : NSObject
 + (instancetype)sharedTraceroute;

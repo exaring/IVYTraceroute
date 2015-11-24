@@ -12,6 +12,7 @@
 @property (nonatomic, copy) NSString *hostAddress;
 @property (nonatomic, assign) int ttl;
 @property (nonatomic, assign) NSTimeInterval elapsedTime;
+@property (nonatomic, assign) int hop;
 
-- (instancetype)initWithHostAddress:(NSString *)hostAddress ttl:(int)ttl elapsedTime:(NSTimeInterval)elapsedTime;
+- (instancetype)initWithHostAddress:(NSString *)hostAddress ttl:(int)ttl elapsedTime:(NSTimeInterval)elapsedTime hop:(int)hop;
 @end

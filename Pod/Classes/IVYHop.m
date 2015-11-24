@@ -10,12 +10,13 @@
 
 @implementation IVYHop
 
-- (instancetype)initWithHostAddress:(NSString *)hostAddress ttl:(int)ttl elapsedTime:(NSTimeInterval)elapsedTime {
+- (instancetype)initWithHostAddress:(NSString *)hostAddress ttl:(int)ttl elapsedTime:(NSTimeInterval)elapsedTime hop:(int)hop {
     self = [super init];
     if (self) {
         self.hostAddress = hostAddress;
         self.ttl = ttl;
         self.elapsedTime = elapsedTime;
+        self.hop = hop;
     }
     return self;
 }
@@ -26,11 +27,13 @@
             "[ttl]:%d\n"
             "[hostAddress]:%@\n"
             "[elapsedTime]:%0.6f\n"
+            "[hop]:%d\n"
             "</%@>",
             className,
             self.ttl,
             self.hostAddress,
             self.elapsedTime,
+            self.hop,
             className];
 }
 
